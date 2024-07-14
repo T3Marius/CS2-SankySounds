@@ -48,7 +48,13 @@ public partial class SankySounds : BasePlugin, IPluginConfig<PluginConfig>
         {
             if (info.ArgByIndex(1) == sound.Key)
             {
-                player.ExecuteClientCommand($"play {sound.Value}");
+		Utilities.GetPlayers().ForEach(player =>
+		{
+			if (player is { IsValid: true })
+			{
+				player.ExecuteClientCommand($"play {sound.Value}");
+			}
+		});
                 return HookResult.Continue;
             }
         }

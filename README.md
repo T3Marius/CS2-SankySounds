@@ -1,4 +1,6 @@
 # Sanky-Sounds
+Thank you, @exkludera for your help!
+
 Basically what this plugin does is that you can play a song for everyone by just typing a custom word to chat, with special permission too.
 
 To use the sounds you need to have the following plugin: https://github.com/Source2ZE/MultiAddonManager and add the addons in the cfg file.

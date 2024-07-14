@@ -16,6 +16,7 @@ Drag&Drop the file .vpk file that pops up after you search it in Source2Viewer, 
   "Sounds": {
   
    "ownage": "sounds/therazu/ownage.vsnd"
+   
   },
   
   "ConfigVersion": 1

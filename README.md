@@ -11,7 +11,7 @@ After that , download the Source2Viewer: https://valveresourceformat.github.io/
 
 After your done download it, take the workshop id and search it on /steamapps/workshop/content/730. (your id should be something like this: "302931942")
 
-Drag&Drop the file .vpk file that pops up after you search it in Source2Viewer, take the file path and then put it in config as i show you:
+Drag&Drop the .vpk file that pops up after you search it in Source2Viewer, take the file path and then put it in config as i show you:
 
 {
 

@@ -12,10 +12,14 @@ After your done download it, take the workshop id and search it on /steamapps/wo
 Drag&Drop the file .vpk file that pops up after you search it in Source2Viewer, take the file path and then put it in config as i show you:
 
 {
+
   "Sounds": {
+  
    "ownage": "sounds/therazu/ownage.vsnd"
   },
+  
   "ConfigVersion": 1
+  
 }
 
 Then after you type ownage to chat it will play the sound. you don t need any prefix, just "ownage"

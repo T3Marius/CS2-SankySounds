@@ -1,0 +1,6 @@
+{
+  "cooldown": "{orange}Comanda este in {green}cooldown{orange}, asteapta {secondsRemaining} secunde.",
+  "command.sound.disabled": "{orange}Ai dezactivat sunetele!",
+  "command.sound.enabled": "{green}Ai activat sunetele!",
+  "no_permission": "{red}Nu ai permisiunea de a folosi aceasta comanda!"
+}

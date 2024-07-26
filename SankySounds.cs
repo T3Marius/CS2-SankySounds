@@ -20,7 +20,8 @@ namespace SankySounds
     {
         public override string ModuleAuthor => "T3Marius";
         public override string ModuleName => "SankySounds";
-        public override string ModuleVersion => "0.0.4";
+        public override string ModuleVersion => "0.0.6";
+        public override string ModuleDescription => "Plugin for using custom sounds with words in chat.";
 
         public PluginConfig Config { get; set; } = new PluginConfig();
 

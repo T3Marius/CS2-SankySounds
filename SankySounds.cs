@@ -1,4 +1,4 @@
-using CounterStrikeSharp.API.Core;
+﻿using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API;
@@ -10,30 +10,73 @@ namespace SankySounds
 {
     public class PluginConfig : BasePluginConfig
     {
-        [JsonPropertyName("Tag")] public string Tag { get; set; } = "[{blue}SankySounds{default}]";
-        public Dictionary<string, string> Sounds { get; set; } = new Dictionary<string, string>();
-        public string Permission { get; set; } = "";
+        // The tag that appears in chat messages. You can use color tags to style it.
+        [JsonPropertyName("Tag")]
+        public string Tag { get; set; } = "[{blue}SankySounds{default}]";
+
+        // Class to manage sound configurations
+        public class Sounds_Configuration
+        {
+            // Dictionary of sound commands and their corresponding sound file paths
+            [JsonPropertyName("Sounds")]
+            public Dictionary<string, string> Sounds { get; set; } = new Dictionary<string, string>();
+        }
+
+        // List of permissions required to use the sound commands
+        [JsonPropertyName("Permissions")]
+        public List<string> Permissions { get; set; } = new List<string>();
+
+        // Cooldown period between sound commands in seconds
+        [JsonPropertyName("CommandsCooldown")]
         public int CommandsCooldown { get; set; } = 0;
+
+        // Whether to show the sound command in chat
+        [JsonPropertyName("ShowCommandInChat")]
         public bool ShowCommandInChat { get; set; } = true;
 
-        // Database configuration class
+        // Prefix for sound commands
+        [JsonPropertyName("SoundsPrefix")]
+        public string SoundsPrefix { get; set; } = ".";
+
+        // Class to manage database configurations
         public class Database_Configuration
         {
+            // Database host address
+            [JsonPropertyName("DatabaseHost")]
             public string DatabaseHost { get; set; } = "host";
+
+            // Database user name
+            [JsonPropertyName("DatabaseUser")]
             public string DatabaseUser { get; set; } = "root";
+
+            // Database user password
+            [JsonPropertyName("DatabasePassword")]
             public string DatabasePassword { get; set; } = "password";
+
+            // Name of the database
+            [JsonPropertyName("DatabaseName")]
             public string DatabaseName { get; set; } = "name";
+
+            // Database port
+            [JsonPropertyName("DatabasePort")]
             public int DatabasePort { get; set; } = 3306;
         }
 
+        // Database configuration instance
+        [JsonPropertyName("DatabaseConfig")]
         public Database_Configuration DatabaseConfig { get; set; } = new Database_Configuration();
+
+        // Sound configuration instance
+        [JsonPropertyName("SoundConfig")]
+        public Sounds_Configuration SoundConfig { get; set; } = new Sounds_Configuration();
     }
+
 
     public partial class SankySounds : BasePlugin, IPluginConfig<PluginConfig>
     {
         public override string ModuleAuthor => "T3Marius";
         public override string ModuleName => "SankySounds";
-        public override string ModuleVersion => "0.0.6";
+        public override string ModuleVersion => "0.0.7";
         public override string ModuleDescription => "Plugin for using custom sounds with words in chat.";
 
         public PluginConfig Config { get; set; } = new PluginConfig();
@@ -80,31 +123,30 @@ namespace SankySounds
             if (player == null || !player.IsValid || player.IsBot)
                 return HookResult.Continue;
 
-            
             if (info.ArgByIndex(1)?.Equals("!sounds", StringComparison.OrdinalIgnoreCase) == true)
             {
                 TogglePlayerSoundSetting(player);
                 return HookResult.Handled;
             }
 
-           
             string commandArgument = info.ArgByIndex(1);
-            if (commandArgument != null && commandArgument.StartsWith("."))
+            string prefix = Config.SoundsPrefix; // Retrieve the prefix from config
+            if (commandArgument != null && commandArgument.StartsWith(prefix))
             {
-                string soundKey = commandArgument.Substring(1);
+                string soundKey = commandArgument.Substring(prefix.Length);
 
-                
-                if (!string.IsNullOrEmpty(Config.Permission) && !AdminManager.PlayerHasPermissions(player, Config.Permission))
+                // Check for multiple permissions
+                if (Config.Permissions.Count > 0 && !Config.Permissions.Any(permission => AdminManager.PlayerHasPermissions(player, permission)))
                 {
                     player.PrintToChat($"{Config.Tag} {Localizer["no_permission"]}");
                     return HookResult.Continue;
                 }
 
-                
-                if (Config.Sounds.TryGetValue(soundKey, out string soundValue))
+                if (Config.SoundConfig.Sounds.TryGetValue(soundKey, out string soundValue))
                 {
                     DateTime now = DateTime.Now;
 
+                    // Use TryGetValue to avoid KeyNotFoundException
                     if (Config.CommandsCooldown > 0 && lastCommandUsage.TryGetValue(player.UserId, out DateTime lastUsage))
                     {
                         TimeSpan cooldownTime = now - lastUsage;

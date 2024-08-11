@@ -1,89 +1,76 @@
-﻿using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API;
 using System.Text.Json.Serialization;
 using CounterStrikeSharp.API.Core.Translations;
 using Nexd.MySQL;
+using CounterStrikeSharp.API.Core.Attributes.Registration;
+using CounterStrikeSharp.API.Modules.Menu;
+using System.Text;
 
 namespace SankySounds
 {
     public class PluginConfig : BasePluginConfig
     {
-        // The tag that appears in chat messages. You can use color tags to style it.
         [JsonPropertyName("Tag")]
         public string Tag { get; set; } = "[{blue}SankySounds{default}]";
 
-        // Class to manage sound configurations
         public class Sounds_Configuration
         {
-            // Dictionary of sound commands and their corresponding sound file paths
             [JsonPropertyName("Sounds")]
             public Dictionary<string, string> Sounds { get; set; } = new Dictionary<string, string>();
         }
 
-        // List of permissions required to use the sound commands
         [JsonPropertyName("Permissions")]
         public List<string> Permissions { get; set; } = new List<string>();
 
-        // Cooldown period between sound commands in seconds
         [JsonPropertyName("CommandsCooldown")]
         public int CommandsCooldown { get; set; } = 0;
 
-        // Whether to show the sound command in chat
         [JsonPropertyName("ShowCommandInChat")]
         public bool ShowCommandInChat { get; set; } = true;
 
-        // Prefix for sound commands
         [JsonPropertyName("SoundsPrefix")]
         public string SoundsPrefix { get; set; } = ".";
 
-        // Class to manage database configurations
         public class Database_Configuration
         {
-            // Database host address
             [JsonPropertyName("DatabaseHost")]
             public string DatabaseHost { get; set; } = "host";
 
-            // Database user name
             [JsonPropertyName("DatabaseUser")]
             public string DatabaseUser { get; set; } = "root";
 
-            // Database user password
             [JsonPropertyName("DatabasePassword")]
             public string DatabasePassword { get; set; } = "password";
 
-            // Name of the database
             [JsonPropertyName("DatabaseName")]
             public string DatabaseName { get; set; } = "name";
 
-            // Database port
             [JsonPropertyName("DatabasePort")]
             public int DatabasePort { get; set; } = 3306;
         }
 
-        // Database configuration instance
         [JsonPropertyName("DatabaseConfig")]
         public Database_Configuration DatabaseConfig { get; set; } = new Database_Configuration();
 
-        // Sound configuration instance
         [JsonPropertyName("SoundConfig")]
         public Sounds_Configuration SoundConfig { get; set; } = new Sounds_Configuration();
     }
 
-
-    public partial class SankySounds : BasePlugin, IPluginConfig<PluginConfig>
+    public class SankySounds : BasePlugin, IPluginConfig<PluginConfig>
     {
         public override string ModuleAuthor => "T3Marius";
         public override string ModuleName => "SankySounds";
-        public override string ModuleVersion => "0.0.8";
+        public override string ModuleVersion => "0.0.9";
         public override string ModuleDescription => "Plugin for using custom sounds with words in chat.";
 
         public PluginConfig Config { get; set; } = new PluginConfig();
-        public Dictionary<int?, DateTime> lastCommandUsage = new Dictionary<int?, DateTime>();
-        public Dictionary<int?, bool> PlayerSoundSettings { get; set; } = new Dictionary<int?, bool>();
-
-        MySqlDb? MySql = null;
+        private Dictionary<int?, DateTime> lastCommandUsage = new Dictionary<int?, DateTime>();
+        private Dictionary<int?, bool> PlayerSoundSettings { get; set; } = new Dictionary<int?, bool>();
+        private Dictionary<int?, DateTime> lastMenuInteraction = new Dictionary<int?, DateTime>(); // Ensure this is defined
+        private MySqlDb? MySql = null;
 
         public void OnConfigParsed(PluginConfig config)
         {
@@ -99,17 +86,29 @@ namespace SankySounds
             var dbConfig = Config.DatabaseConfig;
             MySql = new MySqlDb(dbConfig.DatabaseHost, dbConfig.DatabaseUser, dbConfig.DatabasePassword, dbConfig.DatabaseName, dbConfig.DatabasePort);
 
-           
             MySql.ExecuteNonQueryAsync(@"CREATE TABLE IF NOT EXISTS `Sanky_Sounds` (
-                `user_id` INT NOT NULL PRIMARY KEY, 
-                `last_command_usage` DATETIME, 
-                `sound_enabled` BOOLEAN DEFAULT TRUE
-            );").Wait(); 
+            `user_id` INT NOT NULL PRIMARY KEY, 
+            `last_command_usage` DATETIME, 
+            `sound_enabled` BOOLEAN DEFAULT TRUE
+        );").Wait();
 
             if (hotReload)
             {
-                
+                // Additional hot reload logic if needed
             }
+        }
+
+        [ConsoleCommand("css_sankysounds", "shows a menu with all the sounds that are in config.")]
+        public void OnSankySoundsCommand(CCSPlayerController player, CommandInfo info)
+        {
+            // Check permissions
+            if (Config.Permissions.Count > 0 && !Config.Permissions.Any(permission => AdminManager.PlayerHasPermissions(player, permission)))
+            {
+                return;
+            }
+
+            var menu = new SankyMenu(this);
+            menu.DisplaySankySoundsMenu(player);
         }
 
         public override void Unload(bool hotReload)
@@ -135,10 +134,9 @@ namespace SankySounds
             {
                 string soundKey = commandArgument.Substring(prefix.Length);
 
-                // Check for multiple permissions
+                // Check for permissions from config
                 if (Config.Permissions.Count > 0 && !Config.Permissions.Any(permission => AdminManager.PlayerHasPermissions(player, permission)))
                 {
-                    player.PrintToChat($"{Config.Tag} {Localizer["no_permission"]}");
                     return HookResult.Continue;
                 }
 
@@ -146,7 +144,6 @@ namespace SankySounds
                 {
                     DateTime now = DateTime.Now;
 
-                    // Use TryGetValue to avoid KeyNotFoundException
                     if (Config.CommandsCooldown > 0 && lastCommandUsage.TryGetValue(player.UserId, out DateTime lastUsage))
                     {
                         TimeSpan cooldownTime = now - lastUsage;
@@ -174,7 +171,7 @@ namespace SankySounds
                     });
 
                     lastCommandUsage[player.UserId] = now;
-                    SavePlayerSettings(player.UserId, now, PlayerSoundSettings[player.UserId]);
+                    SavePlayerSettings(player.UserId, now, PlayerSoundSettings.GetValueOrDefault(player.UserId, true));
                     return Config.ShowCommandInChat ? HookResult.Continue : HookResult.Handled;
                 }
             }
@@ -195,11 +192,11 @@ namespace SankySounds
         private void SavePlayerSettings(int? userId, DateTime lastCommandUsage, bool soundEnabled)
         {
             string query = $@"
-                INSERT INTO `Sanky_Sounds` (`user_id`, `last_command_usage`, `sound_enabled`)
-                VALUES ({userId?.ToString() ?? "NULL"}, {(lastCommandUsage != DateTime.MinValue ? $"'{lastCommandUsage:yyyy-MM-dd HH:mm:ss}'" : "NULL")}, {(soundEnabled ? "TRUE" : "FALSE")})
-                ON DUPLICATE KEY UPDATE `last_command_usage` = VALUES(`last_command_usage`), `sound_enabled` = VALUES(`sound_enabled`)";
+            INSERT INTO `Sanky_Sounds` (`user_id`, `last_command_usage`, `sound_enabled`)
+            VALUES ({userId?.ToString() ?? "NULL"}, {(lastCommandUsage != DateTime.MinValue ? $"'{lastCommandUsage:yyyy-MM-dd HH:mm:ss}'" : "NULL")}, {(soundEnabled ? "TRUE" : "FALSE")})
+            ON DUPLICATE KEY UPDATE `last_command_usage` = VALUES(`last_command_usage`), `sound_enabled` = VALUES(`sound_enabled`)";
 
-            MySql!.ExecuteNonQueryAsync(query).Wait(); 
+            MySql!.ExecuteNonQueryAsync(query).Wait();
         }
 
         private void LoadPlayerSettings(int? userId)
@@ -218,5 +215,79 @@ namespace SankySounds
                 PlayerSoundSettings[userId] = true;
             }
         }
+
+        public class SankyMenu
+        {
+            private readonly SankySounds _plugin;
+            private Dictionary<int?, DateTime> lastOptionUsage = new Dictionary<int?, DateTime>();
+
+            public SankyMenu(SankySounds plugin)
+            {
+                _plugin = plugin;
+            }
+
+            public void AddMenuOption(CCSPlayerController player, CenterHtmlMenu menu, Action<CCSPlayerController, ChatMenuOption> onSelect, bool disabled, string display, params object[] args)
+            {
+                using (new WithTemporaryCulture(player.GetLanguage()))
+                {
+                    StringBuilder builder = new();
+                    builder.AppendFormat(display, args);
+
+                    Action<CCSPlayerController, ChatMenuOption> onSelectWithCooldown = (p, option) =>
+                    {
+                        DateTime now = DateTime.Now;
+
+                        // Check cooldown for this option
+                        if (lastOptionUsage.TryGetValue(p.UserId, out DateTime lastUsage))
+                        {
+                            TimeSpan cooldownTime = now - lastUsage;
+                            if (cooldownTime.TotalSeconds < _plugin.Config.CommandsCooldown)
+                            {
+                                int remainingSeconds = (int)Math.Ceiling(_plugin.Config.CommandsCooldown - cooldownTime.TotalSeconds);
+                                string message = $"{_plugin.Config.Tag} {_plugin.Localizer["cooldown"]}";
+                                message = message.Replace("{secondsRemaining}", remainingSeconds.ToString());
+                                p.PrintToChat(message);
+                                return;
+                            }
+                        }
+
+                        // Update last usage time
+                        lastOptionUsage[p.UserId] = now;
+
+                        // Execute the original action
+                        onSelect(p, option);
+                    };
+
+                    menu.AddMenuOption(builder.ToString(), onSelectWithCooldown, disabled);
+                }
+            }
+
+            public void DisplaySankySoundsMenu(CCSPlayerController player)
+            {
+                using (new WithTemporaryCulture(player.GetLanguage()))
+                {
+                    var config = _plugin.Config;
+                    StringBuilder builder = new();
+                    builder.AppendFormat(_plugin.Localizer["menu_sankysounds<title>"]);
+                    CenterHtmlMenu menu = new(builder.ToString(), _plugin);
+
+                    foreach (var soundEntry in config.SoundConfig.Sounds)
+                    {
+                        string soundKey = soundEntry.Key;
+                        string soundValue = soundEntry.Value;
+
+                        AddMenuOption(player, menu, (player, option) =>
+                        {
+                            player.ExecuteClientCommand($"play {soundValue}");
+                            player.PrintToChat($"{config.Tag} {soundKey} sound played.");
+                        },
+                        false, $"{config.SoundsPrefix}{soundKey}");
+                    }
+
+                    MenuManager.OpenCenterHtmlMenu(_plugin, player, menu);
+                }
+            }
+        }
     }
 }
+

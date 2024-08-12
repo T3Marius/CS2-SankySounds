@@ -63,13 +63,12 @@ namespace SankySounds
     {
         public override string ModuleAuthor => "T3Marius";
         public override string ModuleName => "SankySounds";
-        public override string ModuleVersion => "0.0.9";
+        public override string ModuleVersion => "0.1.0";
         public override string ModuleDescription => "Plugin for using custom sounds with words in chat.";
 
         public PluginConfig Config { get; set; } = new PluginConfig();
         private Dictionary<int?, DateTime> lastCommandUsage = new Dictionary<int?, DateTime>();
         private Dictionary<int?, bool> PlayerSoundSettings { get; set; } = new Dictionary<int?, bool>();
-        private Dictionary<int?, DateTime> lastMenuInteraction = new Dictionary<int?, DateTime>(); // Ensure this is defined
         private MySqlDb? MySql = null;
 
         public void OnConfigParsed(PluginConfig config)
@@ -94,7 +93,7 @@ namespace SankySounds
 
             if (hotReload)
             {
-                // Additional hot reload logic if needed
+            
             }
         }
 
@@ -122,19 +121,13 @@ namespace SankySounds
             if (player == null || !player.IsValid || player.IsBot)
                 return HookResult.Continue;
 
-            if (info.ArgByIndex(1)?.Equals("!sounds", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                TogglePlayerSoundSetting(player);
-                return HookResult.Handled;
-            }
-
             string commandArgument = info.ArgByIndex(1);
-            string prefix = Config.SoundsPrefix; // Retrieve the prefix from config
+            string prefix = Config.SoundsPrefix;
+
             if (commandArgument != null && commandArgument.StartsWith(prefix))
             {
                 string soundKey = commandArgument.Substring(prefix.Length);
 
-                // Check for permissions from config
                 if (Config.Permissions.Count > 0 && !Config.Permissions.Any(permission => AdminManager.PlayerHasPermissions(player, permission)))
                 {
                     return HookResult.Continue;
@@ -157,7 +150,7 @@ namespace SankySounds
                         }
                     }
 
-                    if (PlayerSoundSettings.GetValueOrDefault(player.UserId, true) == false)
+                    if (!PlayerSoundSettings.GetValueOrDefault(player.UserId, true))
                     {
                         return HookResult.Continue;
                     }
@@ -172,12 +165,15 @@ namespace SankySounds
 
                     lastCommandUsage[player.UserId] = now;
                     SavePlayerSettings(player.UserId, now, PlayerSoundSettings.GetValueOrDefault(player.UserId, true));
+
+                    // Optionally, suppress the chat output if you don't want the "say" command to show in chat
                     return Config.ShowCommandInChat ? HookResult.Continue : HookResult.Handled;
                 }
             }
 
             return HookResult.Continue;
         }
+
 
         private void TogglePlayerSoundSetting(CCSPlayerController player)
         {
@@ -237,7 +233,6 @@ namespace SankySounds
                     {
                         DateTime now = DateTime.Now;
 
-                        // Check cooldown for this option
                         if (lastOptionUsage.TryGetValue(p.UserId, out DateTime lastUsage))
                         {
                             TimeSpan cooldownTime = now - lastUsage;
@@ -251,7 +246,6 @@ namespace SankySounds
                             }
                         }
 
-                        // Update last usage time
                         lastOptionUsage[p.UserId] = now;
 
                         // Execute the original action
@@ -270,6 +264,7 @@ namespace SankySounds
                     StringBuilder builder = new();
                     builder.AppendFormat(_plugin.Localizer["menu_sankysounds<title>"]);
                     CenterHtmlMenu menu = new(builder.ToString(), _plugin);
+                    DateTime now = DateTime.Now;
 
                     foreach (var soundEntry in config.SoundConfig.Sounds)
                     {
@@ -278,8 +273,22 @@ namespace SankySounds
 
                         AddMenuOption(player, menu, (player, option) =>
                         {
-                            player.ExecuteClientCommand($"play {soundValue}");
-                            player.PrintToChat($"{config.Tag} {soundKey} sound played.");
+                            if (_plugin.PlayerSoundSettings.GetValueOrDefault(player.UserId, true) == false)
+                            {
+                                return;
+                            }
+
+                            Utilities.GetPlayers().ForEach(p =>
+                            {
+                                if (p != null && p.IsValid && _plugin.PlayerSoundSettings.GetValueOrDefault(p.UserId, true))
+                                {
+                                    p.ExecuteClientCommand($"play {soundValue}");
+                                    p.ExecuteClientCommand($"say {config.SoundsPrefix}{soundKey}");
+                                }
+                            });
+
+                            _plugin.lastCommandUsage[player.UserId] = now;
+
                         },
                         false, $"{config.SoundsPrefix}{soundKey}");
                     }
@@ -290,4 +299,3 @@ namespace SankySounds
         }
     }
 }
-

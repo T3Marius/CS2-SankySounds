@@ -1,5 +1,4 @@
 # Sanky-Sounds
-Thank you, @exkludera for your help!
 
 Basically what this plugin does is that you can play a song for everyone by just typing a custom word to chat, with special permission too.
 
@@ -15,15 +14,21 @@ Drag&Drop the .vpk file from the workshop id in Source2Viewer, take the file pat
 
 ```
 {
-  "Sounds": {
-   "example": "sounds/example.vsnd"
-  },
-  "Permission": "@css/generic",
-  "ConfigVersion": 1
+[Sounds]
+sound1 = "sounds/sankysounds/sound1"
+sound2 = "sounds/sankysounds/sound2"
+sound3 = "sounds/sankysounds/sound3"
+
+[Permissions]
+Permissions = ["@css/root", "@css/vips"]
+
+[Settings]
+CommandsCooldown = 15
+SoundsPrefix = "."
+EnableMenu = true
+SankyMenu = [ "sankysounds" ]
 }
 ```
 Then after you type example to chat it will play the sound. you don't need any prefix, just "example"
-
-To add more sounds just put a "," after the "sounds/example.vsnd" and contiune.
 
 If you don't want all the players on server to use the sounds, change permission flag in the config.

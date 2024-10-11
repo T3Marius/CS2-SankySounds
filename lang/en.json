@@ -1,6 +1,0 @@
-{
-  "cooldown": "{orange}Command is on {green}cooldown{orange}, please wait {secondsRemaining} seconds.",
-  "command.sound.disabled": "{orange}You turned off the sounds!",
-  "command.sound.enabled": "{green}You turned on the sounds!",
-  "no_permission": "{red}You don't have permission to use this command!"
-}

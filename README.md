@@ -13,7 +13,6 @@ After that download the Source2Viewer: https://valveresourceformat.github.io/
 Drag&Drop the .vpk file from the workshop id in Source2Viewer, take the file path and then put it in config as i show you:
 
 ```
-{
 [Sounds]
 sound1 = "sounds/sankysounds/sound1"
 sound2 = "sounds/sankysounds/sound2"
@@ -27,7 +26,6 @@ CommandsCooldown = 15
 SoundsPrefix = "."
 EnableMenu = true
 SankyMenu = [ "sankysounds" ]
-}
 ```
 Then after you type example to chat it will play the sound. you don't need any prefix, just "example"
 

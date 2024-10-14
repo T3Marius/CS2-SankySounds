@@ -14,6 +14,8 @@ public class SankySounds : BasePlugin
     public static SankySounds Instance { get; set; } = new SankySounds();
 
     public static Dictionary<int, DateTime> LastCommandUsage { get; set; } = new Dictionary<int, DateTime>();
+    public static Dictionary<int, bool> PlayerSoundStatus { get; set; } = new Dictionary<int, bool>();
+
     public override void Load(bool hotReload)
     {
         Instance = this;
@@ -21,6 +23,19 @@ public class SankySounds : BasePlugin
         AddCommandListener("say", Command_Say, HookMode.Pre);
         AddCommandListener("say_team", Command_Say, HookMode.Pre);
         Config_Config.Load();
+
+        var commands = new Dictionary<IEnumerable<string>, (string description, CommandInfo.CommandCallback handler)>
+            {
+               { Config.Settings.SoundCommand, ("Toggle sounds", Command_Sounds) }
+            };
+
+        foreach (var commandPair in commands)
+        {
+            foreach (var command in commandPair.Key)
+            {
+                Instance.AddCommand($"css_{command}", commandPair.Value.description, commandPair.Value.handler);
+            }
+        }
     }
     public HookResult Command_Say(CCSPlayerController? player, CommandInfo info)
     {
@@ -55,10 +70,34 @@ public class SankySounds : BasePlugin
 
                 Utilities.GetPlayers().ForEach(p =>
                 {
-                    p.ExecuteClientCommand($"play {sound}");
+                    bool soundEnabled = PlayerSoundStatus.TryGetValue(p.UserId!.Value, out bool isSoundOn) && isSoundOn;
+                    if (soundEnabled)
+                    {
+                        p.ExecuteClientCommand($"play {sound}");
+                    }
+
                 });
             }
         }
         return HookResult.Continue;
+    }
+
+    public void Command_Sounds(CCSPlayerController? player, CommandInfo info)
+    {
+        if (player != null)
+        {
+            if (PlayerSoundStatus.TryGetValue(player.UserId!.Value, out bool isSoundOn))
+            {
+                PlayerSoundStatus[player.UserId.Value] = !isSoundOn;
+            }
+            else
+            {
+                PlayerSoundStatus[player.UserId.Value] = false;
+            }
+            string statusMessage = PlayerSoundStatus[player.UserId.Value]
+                                                                    ? Localizer["sounds unmuted"]
+                                                                    : Localizer["sounds muted"];
+            player.PrintToChat(Localizer["prefix"] +  statusMessage);
+        }
     }
 }

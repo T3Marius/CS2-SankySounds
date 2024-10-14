@@ -10,7 +10,7 @@ public class SankySounds : BasePlugin
 {
     public override string ModuleAuthor => "T3Marius";
     public override string ModuleName => "SankySounds";
-    public override string ModuleVersion => "1.0";
+    public override string ModuleVersion => "1.1";
     public static SankySounds Instance { get; set; } = new SankySounds();
 
     public static Dictionary<int, DateTime> LastCommandUsage { get; set; } = new Dictionary<int, DateTime>();

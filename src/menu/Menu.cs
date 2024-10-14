@@ -76,7 +76,11 @@ public static class Menu
             {
                 if (player != null && player.IsValid)
                 {
-                    player.ExecuteClientCommand($"play {sound}");
+                    bool soundEnabled = PlayerSoundStatus.TryGetValue(p.UserId!.Value, out bool isSoundOn) && isSoundOn;
+                    if (soundEnabled)
+                    {
+                        p.ExecuteClientCommand($"play {sound}");
+                    }
                 }
             });
         };

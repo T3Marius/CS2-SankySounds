@@ -46,7 +46,8 @@ namespace SankySounds
                 CommandsCooldown = int.Parse(settingsTable["CommandsCooldown"]?.ToString() ?? "0"),
                 SoundsPrefix = settingsTable["SoundsPrefix"]?.ToString() ?? ".",
                 EnableMenu = bool.Parse(settingsTable["EnableMenu"].ToString()!),
-                SankyMenu = GetTomlArray(settingsTable, "SankyMenu")
+                SankyMenu = GetTomlArray(settingsTable, "SankyMenu"),
+                SoundCommand = GetTomlArray(settingsTable, "SoundCommand")
             };
 
             Config = new Cfg
@@ -78,6 +79,7 @@ namespace SankySounds
             public string SoundsPrefix { get; set; } = ".";
             public bool EnableMenu { get; set; } = false;
             public string[] SankyMenu { get; set; } = Array.Empty<string>();
+            public string[] SoundCommand { get; set; } = Array.Empty <string>();
         }
     }
 }

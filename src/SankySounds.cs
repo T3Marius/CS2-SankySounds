@@ -12,7 +12,6 @@ public class SankySounds : BasePlugin
     public override string ModuleName => "SankySounds";
     public override string ModuleVersion => "1.1";
     public static SankySounds Instance { get; set; } = new SankySounds();
-
     public static Dictionary<int, DateTime> LastCommandUsage { get; set; } = new Dictionary<int, DateTime>();
     public static Dictionary<int, bool> PlayerSoundStatus { get; set; } = new Dictionary<int, bool>();
 
@@ -25,9 +24,9 @@ public class SankySounds : BasePlugin
         Config_Config.Load();
 
         var commands = new Dictionary<IEnumerable<string>, (string description, CommandInfo.CommandCallback handler)>
-            {
-               { Config.Settings.SoundCommand, ("Toggle sounds", Command_Sounds) }
-            };
+        {
+            { Config.Settings.SoundCommand, ("Toggle sounds", Command_Sounds) }
+        };
 
         foreach (var commandPair in commands)
         {
@@ -37,6 +36,7 @@ public class SankySounds : BasePlugin
             }
         }
     }
+
     public HookResult Command_Say(CCSPlayerController? player, CommandInfo info)
     {
         if (player == null || !player.IsValid || player.IsBot)
@@ -75,13 +75,11 @@ public class SankySounds : BasePlugin
                     {
                         p.ExecuteClientCommand($"play {sound}");
                     }
-
                 });
             }
         }
         return HookResult.Continue;
     }
-
     public void Command_Sounds(CCSPlayerController? player, CommandInfo info)
     {
         if (player != null)
@@ -92,12 +90,13 @@ public class SankySounds : BasePlugin
             }
             else
             {
-                PlayerSoundStatus[player.UserId.Value] = false;
+                PlayerSoundStatus[player.UserId.Value] = true;
             }
+
             string statusMessage = PlayerSoundStatus[player.UserId.Value]
-                                                                    ? Localizer["sounds unmuted"]
-                                                                    : Localizer["sounds muted"];
-            player.PrintToChat(Localizer["prefix"] +  statusMessage);
+                ? Localizer["sounds unmuted"]
+                : Localizer["sounds muted"];
+            player.PrintToChat(Localizer["prefix"] + statusMessage);
         }
     }
 }

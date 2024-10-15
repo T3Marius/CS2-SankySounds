@@ -11,7 +11,7 @@ namespace SankySounds;
 
 public static class Menu
 {
-    private static Dictionary<int?, DateTime> lastCommandUsage = new Dictionary<int?, DateTime>();
+    private static Dictionary<int, DateTime> lastCommandUsage = new Dictionary<int, DateTime>();
 
     public static void Load()
     {
@@ -60,17 +60,15 @@ public static class Menu
                 return;
 
             DateTime now = DateTime.Now;
-            if (Config.Settings.CommandsCooldown > 0 && lastCommandUsage.TryGetValue(player.UserId, out DateTime lastUsage))
+            if (LastCommandUsage.TryGetValue(player.UserId!.Value, out DateTime lastUsage) &&
+                (now - lastUsage).TotalSeconds < Config.Settings.CommandsCooldown)
             {
-                TimeSpan cooldownTime = now - lastUsage;
-                if (cooldownTime.TotalSeconds < Config.Settings.CommandsCooldown)
-                {
-                    int remainingSeconds = (int)Math.Ceiling(Config.Settings.CommandsCooldown - cooldownTime.TotalSeconds);
-                    player.PrintToChat(Instance.Localizer["prefix"] + Instance.Localizer["cooldown", remainingSeconds]);
-                    return;
-                }
+                int remainingSeconds = (int)(Config.Settings.CommandsCooldown - (now - lastUsage).TotalSeconds);
+                player.PrintToChat(Instance.Localizer["prefix"] + Instance.Localizer["cooldown", remainingSeconds]);
+                return;
             }
-            lastCommandUsage[player.UserId] = now;
+
+            LastCommandUsage[player.UserId!.Value] = now;
 
             Utilities.GetPlayers().ForEach(player =>
             {

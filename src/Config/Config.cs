@@ -44,17 +44,28 @@ namespace SankySounds
             Config_Settings config_settings = new()
             {
                 CommandsCooldown = int.Parse(settingsTable["CommandsCooldown"]?.ToString() ?? "0"),
+                EnableMessageForCooldown = bool.Parse(settingsTable["EnableMessageForCooldown"].ToString()!),
                 SoundsPrefix = settingsTable["SoundsPrefix"]?.ToString() ?? ".",
                 EnableMenu = bool.Parse(settingsTable["EnableMenu"].ToString()!),
                 SankyMenu = GetTomlArray(settingsTable, "SankyMenu"),
                 SoundCommand = GetTomlArray(settingsTable, "SoundCommand")
+            };
+            TomlTable databaseTable = (TomlTable)model["Database"];
+            Database_Configuration config_database = new()
+            {
+                DBHost = databaseTable["DBHost"].ToString()!,
+                DBName = databaseTable["DBName"].ToString()!,
+                DBUser = databaseTable["DBUser"].ToString()!,
+                DBPassword = databaseTable["DBPassword"].ToString()!,
+                DBPort = uint.Parse(databaseTable["DBPort"].ToString()!)
             };
 
             Config = new Cfg
             {
                 Sounds = soundsDict,
                 Permissions = permissionsList,
-                Settings = config_settings
+                Settings = config_settings,
+                Database = config_database
             };
         }
         private static string[] GetTomlArray(TomlTable table, string key)
@@ -71,15 +82,25 @@ namespace SankySounds
             public Dictionary<string, string> Sounds { get; set; } = new();
             public List<string> Permissions { get; set; } = new();
             public Config_Settings Settings { get; set; } = new();
+            public Database_Configuration Database { get; set; } = new();
         }
 
         public class Config_Settings
         {
             public int CommandsCooldown { get; set; }
+            public bool EnableMessageForCooldown { get; set; }
             public string SoundsPrefix { get; set; } = ".";
             public bool EnableMenu { get; set; } = false;
             public string[] SankyMenu { get; set; } = Array.Empty<string>();
             public string[] SoundCommand { get; set; } = Array.Empty <string>();
+        }
+        public class Database_Configuration
+        {
+            public string DBHost { get; set; } = string.Empty;
+            public string DBName { get; set; } = string.Empty;
+            public string DBUser { get; set; } = string.Empty;
+            public string DBPassword { get; set; } = string.Empty;
+            public uint DBPort { get; set; } = 3306;
         }
     }
 }

@@ -1,6 +1,8 @@
 {
   "prefix": "{silver}- {blue}[ SK ] {silver}-{default} ",
   "menu<title>": "SankySounds",
-  "no permisson": "You don't have permission to use this command!",
-  "cooldown": "Please wait! Command is on cooldown: {red}{0}"
+  "no permission": "You don't have permission to use this command!",
+  "cooldown": "Please wait! Command is on cooldown: {red}{0}",
+  "sounds muted": "Sounds are now {red}muted.",
+  "sounds unmuted": "Sounds are now {green}unmuted."
 }

@@ -12,7 +12,7 @@ After that download the Source2Viewer: https://valveresourceformat.github.io/
 
 Drag&Drop the .vpk file from the workshop id in Source2Viewer, take the file path and then put it in config as i show you:
 
-```
+```ini
 [Sounds]
 sound1 = "sounds/sankysounds/sound1"
 sound2 = "sounds/sankysounds/sound2"
